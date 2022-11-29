@@ -3,24 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 
-
-# # optional imports
-# try:
-#     from reliabilipy import reliability_analysis
-# except:
-#     pass
-
-# try:
-#     import matplotlib.pyplot as plt
-# except:
-#     pass
-
-# try:
-#     from statsmodels.stats.outliers_influence import variance_inflation_factor as vif
-# except:
-#     pass
-
-def turkey_outliers(df, var, distance=3, mode="print"):
+def tukey_outliers(df, var, distance=3, mode="print"):
     """Function to identify outliers using the Tukey method.
     Args:
         df (pandas dataframe): Dataframe containing the variable of interest.
@@ -102,13 +85,13 @@ def check_homoscedacity(y_var, group_var, df):
     var_ratio = max_var[1]/min_var[1]
     print(f"Smallest variance for {min_var[0]}: {min_var[1]:.2f}")
     print(f"Largest variance for {max_var[0]}: {max_var[1]:.2f}")
-    print(f"Variance ratio for: {var_ratio:.2f}".format(var_ratio))
+    print(f"Variance ratio: {var_ratio:.2f}")
 
     if var_ratio <= 1.5:
-        print("Variance ratio is smaller or equal to 1.5, F-test will be robust.")
+        print("Variance ratio is <= 1.5, F-test will be robust.")
         return
     else:
-        print("Variance ratio is larger 1.5. Now doing additional checks to see if F-test is robust.")
+        print("Variance ratio is > 1.5. Now doing additional checks to see if F-test is robust.")
 
     # Create dataframe with variance and group sizes
     var_n_df = var_ser.to_frame(name="var")
@@ -119,32 +102,32 @@ def check_homoscedacity(y_var, group_var, df):
     if (corr_var_n >= 0) and (corr_var_n <= 0.5):
         print(
             f"Correlation between sample size and variance (pairing) is {corr_var_n:.2f}."
-            f " That is between 0 and .5. F-test should be robust")
+            f" That is between 0 and .5. F-test should be robust")
         return
     else:
         print(
-            f"Correlation between sample size and variance (pairing) is {corr_var_n:.2f}. That is below 0 or over .5.")
+            f"Correlation between sample size and variance (pairing) is {corr_var_n:.2f}.")
 
     # Compute coefficient of sample size variation
     coeff_n = var_n_df["var"].std()/var_n_df["var"].mean()
     if (corr_var_n > 0.5) and (coeff_n > .33) and (var_ratio > 2):
-        print(f"Pairing is {corr_var_n:.2f}, so larger than .5,"
-              f",coefficient of sample size variation is {coeff_n:.2f}, larger than .33,"
-              f" and variance ratio is {var_ratio:.2f}, larger than 2."
-              f"F-test is too conserative (hurting power)")
+        print(f"Pairing is {corr_var_n:.2f}, so larger than .5."
+              f" The coefficient of sample size variation is {coeff_n:.2f}, larger than .33."
+              f" The variance ratio is {var_ratio:.2f}, larger than 2."
+              f" F-test is too conserative (hurting power)")
     elif (corr_var_n < 0) and (corr_var_n >= -0.5) and (coeff_n > .16) and (var_ratio > 2):
-        print(f"Pairing is {corr_var_n:.2f}, so smaller than 0 and larger than or equal to -.5,"
-              f", coefficient of sample size variation is {coeff_n:.2f}, larger than .16,"
-              f"and variance ratio is {var_ratio:.2f}, larger than 2."
-              f"F-test is too liberal (real alpha might be as high as .1 if variance ratio is 9 or smaller).")
+        print(f"Pairing is {corr_var_n:.2f}, so smaller than 0 and larger than or equal to -.5."
+              f" The coefficient of sample size variation is {coeff_n:.2f}, larger than .16."
+              f" The variance ratio is {var_ratio:.2f}, larger than 2."
+              f" F-test is too liberal (real alpha might be as high as .1 if variance ratio is 9 or smaller).")
     elif (corr_var_n < -0.5):
         print(f"Pairing is {corr_var_n:.2f}, so smaller than -.5."
-              f"F-test is too liberal (real alpha might be as high as .2 if variance ratio is 9 or smaller).")
+              f" F-test is too liberal (real alpha might be as high as .2 if variance ratio is 9 or smaller).")
     else:
         print(
             f"Pairing is {corr_var_n:.2f}, coefficient of sample size variation is {coeff_n:.2f},"
-            f"variance ratio is {var_ratio:.2f}."
-            f"This specific combination should have robust F-test, but look into the paper",
-            f"('Effect of variance ratio on ANOVA robustness: Might 1.5 be the limit?', Blanca et al., 2018)",
-            f"to be sure."
+            f" and the variance ratio is {var_ratio:.2f}."
+            f" This specific combination should have robust F-test, but look into the paper",
+            f" ('Effect of variance ratio on ANOVA robustness: Might 1.5 be the limit?', Blanca et al., 2018)",
+            f" to be sure."
             )

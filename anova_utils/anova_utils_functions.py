@@ -14,6 +14,11 @@ try:
 except:
     pass
 
+try:
+    import seaborn as sns
+except:
+    pass
+
 def tukey_outliers(df, var, distance=3, mode="print"):
     """
     Function to identify outliers using the Tukey method.
@@ -342,7 +347,7 @@ def box_over_groups(df, var, var_name, group_label, groups,
                     ylim=(-3, 3), size=(15, 15),
                     plot_avg=True, save_plot=False):
     """
-    Plot boxplots for a selection of groups.
+    Plot boxplots for a selection of groups. Requires seaborn.
 
     Parameters
     ----------

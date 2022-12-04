@@ -281,3 +281,115 @@ def compare_var_mult_groups(df, dv, group_var, alpha=0.05, adj_p = True, print_r
 
     if return_results:
         return omnibus, posthoc
+
+def hist_over_groups(df, var, var_name, group_label, groups,
+                     bins_n=10, xlim=(-3, 3), size=(15, 15),
+                     plot_avg=True):
+    """
+    Plot histograms for a selection of groups.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        The DataFrame containing the data.
+    var : str
+        The name of the variable to plot.
+    var_name : str
+        The label for the variable to plot. This will be used as the title of the plot.
+    group_label : str
+        The name of the variable containing the groups.
+    groups : list
+        The groups to plot.
+    bins_n : int, optional
+        The number of bins to use for the histograms. Default is 10.
+    xlim : tuple, optional
+        The x-axis limits. Default is (-3, 3).
+    size : tuple, optional
+        The size of the plot. Default is (15, 15).
+    plot_avg : bool, optional
+        Whether to include a plot of the grand mean over all groups. Default is True.
+    
+    Returns
+    -------
+    None
+    """
+
+    n_plots = len(groups)+1 if plot_avg else len(groups)
+    fig, axes = plt.subplots(1, n_plots, figsize=size)
+    fig.tight_layout(pad=5.0)
+
+    x = 0
+
+    if plot_avg:
+        df[var].plot.hist(ax=axes[x], bins=bins_n)
+        df[var].plot.kde(ax=axes[x], secondary_y=True)
+        axes[x].set_xlim(xlim)
+        axes[x].set_title(f"{var_name} - Average")
+        plt.grid(False)
+        x += 1
+
+    for group in groups:
+        df_group = df[df[group_label] == group]
+        df_group[var].plot.hist(ax=axes[x], bins=bins_n)
+        df_group[var].plot.kde(ax=axes[x], secondary_y=True)
+        axes[x].set_xlim(xlim)
+        axes[x].set_title(f"{var_name} - {group}")
+        plt.grid(False)
+        x += 1
+
+
+def box_over_groups(df, var, var_name, group_label, groups,
+                    ylim=(-3, 3), size=(15, 15),
+                    plot_avg=True, save_plot=False):
+    """
+    Plot boxplots for a selection of groups.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        The DataFrame containing the data.
+    var : str
+        The name of the variable to plot.
+    var_name : str
+        The label for the variable to plot. This will be used as the title of the plot.
+    group_label : str
+        The name of the variable containing the groups.
+    groups : list
+        The groups to plot.
+    ylim : tuple, optional
+        The y-axis limits. Default is (-3, 3).
+    size : tuple, optional
+        The size of the plot. Default is (15, 15).
+    plot_avg : bool, optional
+        Whether to include a plot of the grand mean over all groups. Default is True.
+    save_plot : bool, optional
+        Whether to save the plot. Default is False.
+    
+    Returns
+    -------
+    None
+    """
+
+    n_plots = len(groups)+1 if plot_avg else len(groups)
+    fig, axes = plt.subplots(1, n_plots, figsize=size)
+    fig.tight_layout(pad=5.0)
+
+    x = 0
+
+    if plot_avg:
+        sns.boxplot(y=df[var], ax=axes[x])
+        axes[x].set_ylim(ylim)
+        axes[x].set_title(f"{var_name} - Average")
+        axes[x].grid(False)
+        x += 1
+
+    for group in groups:
+        df_group = df[df[group_label] == group]
+        sns.boxplot(y=df_group[var], ax=axes[x])
+        axes[x].set_ylim(ylim)
+        axes[x].set_title(f"{var_name} - {group}")
+        axes[x].grid(False)
+        x += 1
+
+    if save_plot:
+        fig.savefig(save_plot, bbox_inches="tight")

@@ -1,4 +1,4 @@
-"""EFA Utilities (efa_utils)
+"""ANOVA Utilities (anova_utils)
 Custom utility functions for conducting ANOVAs (or ANCOVAs).
 
 Functions:

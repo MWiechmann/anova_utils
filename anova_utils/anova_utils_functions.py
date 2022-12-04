@@ -3,15 +3,36 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 
+# optional packages
+try:
+    import pingouin as pg
+except:
+    pass
+
+try:
+    from statsmodels.stats.multitest import fdrcorrection
+except:
+    pass
+
 def tukey_outliers(df, var, distance=3, mode="print"):
-    """Function to identify outliers using the Tukey method.
-    Args:
-        df (pandas dataframe): Dataframe containing the variable of interest.
-        var (str): Name of the variable of interest.
-        distance (int): Distance from the median to use as the threshold for outliers. Default is 3.
-        mode (str): Whether to print the outliers or return them as a list. Default is "print".
-    Returns:
-        list: List of outliers if mode is "return". Otherwise, None.
+    """
+    Function to identify outliers using the Tukey method.
+    
+    Parameters
+    ----------
+    df : pandas dataframe
+        Dataframe containing the variable of interest.
+    var : str
+        Name of the variable to identify outliers in.
+    distance : int, optional
+        Distance from the median to consider an outlier. The default is 3.
+    mode : str, optional
+        Mode to return the outliers. The default is "print".
+    
+    Returns
+    -------
+    list
+        List of outliers. Only if mode is "return". Otherwise, None.
     """
 
     q1 = df[var].quantile(0.25)
@@ -38,15 +59,24 @@ def tukey_outliers(df, var, distance=3, mode="print"):
 
 
 def qqs_over_groups_and_vars(df, group_label, vars_li, size=(15, 15)):
-    """Function to plot QQ subplots for each variable in a list of variables, over groups in a categorical variable.
-    Args:
-        df (pandas dataframe): Dataframe containing the variables of interest.
-        group_label (str): Name of the categorical variable to group by.
-        vars_li (list): List of variables to plot.
-        size (tuple): Size of the plot to draw subplots in. Default is (15, 15).
-    Returns:
-           None 
-        """
+    """
+    Function to plot QQ subplots for each variable in a list of variables, over groups in a categorical variable.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        Dataframe containing the variables of interest.
+    group_label : str
+        Name of the categorical variable to group the data.
+    vars_li : list
+        List of variables to plot.
+    size : tuple, optional
+        Size of the plot to draw subplots in. The default is (15, 15).
+
+    Returns
+    -------
+    None. 
+    """
     groups_li = df[group_label].unique()
     fig, axes = plt.subplots(len(groups_li), len(vars_li), figsize=size)
     fig.tight_layout(pad=5.0)
@@ -66,13 +96,21 @@ def qqs_over_groups_and_vars(df, group_label, vars_li, size=(15, 15)):
 
 
 def check_homoscedacity(y_var, group_var, df):
-    """Function to check for homoscedacity using heuristics recommended by Blanca et al. (2018).
-    Args:
-        y_var (str): Name of the dependent variable.
-        group_var (str): Name of the independent categorical variable to check homoscedasticity for.
-        df (pandas dataframe): Dataframe containing the variables of interest.
-    Returns:
-        None 
+    """
+    Function to check for homoscedacity using heuristics recommended by Blanca et al. (2018).
+    
+    Parameters
+    ----------
+    y_var : str
+        Name of the variable to check for homoscedacity.
+    group_var : str
+        Name of the categorical variable to group the data.
+    df : pandas dataframe
+        Dataframe containing the variables of interest.
+
+    Returns
+    -------
+    None. 
     """
 
     var_ser = pd.Series(index=df[group_var].unique(), dtype=float)
@@ -131,3 +169,115 @@ def check_homoscedacity(y_var, group_var, df):
             f" ('Effect of variance ratio on ANOVA robustness: Might 1.5 be the limit?', Blanca et al., 2018)",
             f" to be sure."
             )
+
+def compare_var_mult_groups(df, dv, group_var, alpha=0.05, adj_p = True, print_results = True, return_results = True, method = "levene"):
+    """
+    Compare the variance of a variable between multiple groups. Requires the pingouin package.
+
+    Will conduct a Levene or Bartlett test as an omnibus test first.
+    This omnibus test will be followed up by post hoc tests.
+    For the post-hoc tests, each group will be compared to the rest of the groups.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        The DataFrame containing the data.
+    dv : str
+        The name of the variable to compare the variance of.
+    group_var : str
+        The name of the variable containing the groups.
+    alpha : float
+        The significance level to use for the tests. Default is 0.05.
+    adj_p : bool
+        Whether to adjust the p-values for multiple comparisons. Default is True. This will use FDR correction. This option requires the statsmodels package.
+    print_results : bool
+        Whether to print a report of the results. Default is True.
+    return_results : bool
+        Whether to return the results. Default is True.
+    method : str
+        The method to use for the omnibus test. Default is "levene". Can also be "bartlett".
+
+    Returns
+    -------
+    omnibus : pandas DataFrame
+        Only returned when return_results = True. A pandas DataFrame containing the results of the omnibus test. 
+    posthoc : dict
+        Only returned when return_results = True. A dictionary containing the results of the post hoc tests. The keys are the group names. The values are pandas DataFrames containing the results of the post hoc tests for that group.
+    """
+
+    # Omnibus test
+    omnibus = pg.homoscedasticity(
+        df, dv=dv, group=group_var, method=method, alpha=alpha
+        )
+
+    # Post hoc tests
+    # compare each preset against rest
+    # store results in dict with preset as key, and a pandas df as value
+    # the df contains the columns 'W', 'pval', 'equal_var'
+    posthoc = {}
+
+    groups = df[group_var].unique()
+        
+    for group in groups:
+        data_group = df[
+            df[group_var] == group
+            ][dv].to_numpy()
+        data_rest = df[
+            df[group_var] != group
+            ][dv].to_numpy()
+        posthoc[group] = pg.homoscedasticity(
+            [data_group, data_rest], method=method, alpha=alpha
+            )
+
+    # collect a p-values from the posthoc tests in a list
+    ps = []
+    for group in posthoc:
+        ps.append(posthoc[group].iloc[0, 1])
+    # correct for multiple comparisons with FDR
+    if adj_p:
+        adj_ps = fdrcorrection(ps, alpha=0.1)[1]
+
+    i = 0
+    # Go through posthoc dict
+    # For each category, add SD and adj. p (if applicable) to the df 
+    for group in posthoc:
+        posthoc[group].loc[
+            method, "sd"
+            ] = df[df[group_var] == group][dv].std()
+        if adj_p:
+            posthoc[group].loc[method, "adj_p"] = adj_ps[i]
+        i += 1
+
+    # Print results
+    if print_results:
+        print(f"Omnibus test:\n{omnibus.round(4).to_string()}\n")
+
+        # Print post hoc results
+        if omnibus.iloc[0, 2] == False:
+            print(
+                f"Variances are not equal, doing posthoc tests:"
+                f"\nAverage SD: {df[dv].std():.4f}"
+                )
+            if adj_p:
+                print(f"\nPresets with adjusted p-vals < {alpha:.2f} displayed below:")
+            else:
+                print(f"\nPresets with p-vals < {alpha:.2f} displayed below:")
+
+            any_sig = False
+            for group in posthoc:
+                if adj_p:
+                    if posthoc[group].iloc[0, 4] < alpha:
+                        print(f"\n{group}:")
+                        print(posthoc[group].round(4).to_string())
+                        any_sig = True
+                else:
+                    if posthoc[group].iloc[0, 1] < alpha:
+                        print(f"\n{group}:")
+                        print(posthoc[group].round(4).to_string())
+                        any_sig = True
+
+            if not any_sig:
+                print("No significant differences for any of the groups (vs. rest).")
+
+    if return_results:
+        return omnibus, posthoc

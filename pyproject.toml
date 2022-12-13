@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "anova-utils"
-version = "0.3.1"
+version = "0.3.2"
 description = "Custom utility functions for conducting ANOVAs (or ANCOVAs)."
 authors = ["Marcel Wiechmann <mail@mwiechmann.com>"]
 license = "GNU GENERAL PUBLIC LICENSE v3"

@@ -181,7 +181,7 @@ def compare_var_mult_groups(df, dv, group_var, alpha=0.05, adj_p = True, print_r
 
     Will conduct a Levene or Bartlett test as an omnibus test first.
     This omnibus test will be followed up by post hoc tests.
-    For the post-hoc tests, each group will be compared to the rest of the groups.
+    For the post-hoc tests, each group will be compared to the rest of the groups. p-values will be adjusted for multiple comparisons using FDR correction.
 
     Parameters
     ----------
@@ -289,7 +289,7 @@ def compare_var_mult_groups(df, dv, group_var, alpha=0.05, adj_p = True, print_r
 
 def hist_over_groups(df, var, var_name, group_label, groups,
                      bins_n=10, xlim=(-3, 3), size=(15, 15),
-                     plot_avg=True):
+                     plot_avg=True, save_plot=False):
     """
     Plot histograms for a selection of groups.
 
@@ -341,6 +341,9 @@ def hist_over_groups(df, var, var_name, group_label, groups,
         axes[x].set_title(f"{var_name} - {group}")
         plt.grid(False)
         x += 1
+
+    if save_plot:
+        fig.savefig(save_plot, bbox_inches="tight")
 
 
 def box_over_groups(df, var, var_name, group_label, groups,

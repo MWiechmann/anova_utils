@@ -289,7 +289,8 @@ def compare_var_mult_groups(df, dv, group_var, alpha=0.05, adj_p = True, print_r
 
 def hist_over_groups(df, var, var_name, group_label, groups,
                      bins_n=10, xlim=(-3, 3), size=(15, 15),
-                     plot_avg=True, save_plot=False):
+                     plot_avg=True, save_plot=False,
+                     ):
     """
     Plot histograms for a selection of groups.
 
@@ -330,7 +331,7 @@ def hist_over_groups(df, var, var_name, group_label, groups,
         df[var].plot.kde(ax=axes[x], secondary_y=True)
         axes[x].set_xlim(xlim)
         axes[x].set_title(f"{var_name} - Average")
-        plt.grid(False)
+        axes[x].grid(False)
         x += 1
 
     for group in groups:
@@ -339,7 +340,7 @@ def hist_over_groups(df, var, var_name, group_label, groups,
         df_group[var].plot.kde(ax=axes[x], secondary_y=True)
         axes[x].set_xlim(xlim)
         axes[x].set_title(f"{var_name} - {group}")
-        plt.grid(False)
+        axes[x].grid(False)
         x += 1
 
     if save_plot:
